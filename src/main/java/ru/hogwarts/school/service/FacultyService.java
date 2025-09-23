@@ -1,48 +1,48 @@
 package ru.hogwarts.school.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.hogwarts.school.model.Faculty;
-
-import java.util.ArrayList;
+import ru.hogwarts.school.repository.FacultyRepository;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.List;
 
 @Service
 public class FacultyService {
 
-    private final HashMap<Long, Faculty> faculties = new HashMap<>();
-    private long count = 0;
+    private final FacultyRepository facultyRepository;
+
+    @Autowired
+    public FacultyService(FacultyRepository facultyRepository) {
+        this.facultyRepository = facultyRepository;
+    }
 
     public Faculty addFaculty(Faculty faculty) {
-        faculty.setId(count++);
-        faculties.put(faculty.getId(), faculty);
-        return faculty;
+        return facultyRepository.save(faculty);
     }
 
     public Faculty findFaculty(long id) {
-        return faculties.get(id);
+        return facultyRepository.findById(id).orElse(null);
     }
 
     public Faculty editFaculty(Faculty faculty) {
-        if (!faculties.containsKey(faculty.getId())) {
+        if (!facultyRepository.existsById(faculty.getId())) {
             return null;
         }
-        faculties.put(faculty.getId(), faculty);
-        return faculty;
+        return facultyRepository.save(faculty);
     }
 
     public Faculty deleteFaculty(long id) {
-        return faculties.remove(id);
+        Faculty faculty = findFaculty(id);
+        if (faculty != null) {
+            facultyRepository.deleteById(id);
+        }
+        return faculty;
     }
 
     public Collection<Faculty> findByColor(String color) {
-        ArrayList<Faculty> result = new ArrayList<>();
-        for (Faculty faculty : faculties.values()) {
-            if (Objects.equals(faculty.getColor(), color)) {
-                result.add(faculty);
-            }
-        }
-        return result;
+        return facultyRepository.findAll().stream()
+                .filter(f -> f.getColor().equals(color))
+                .toList();
     }
 }

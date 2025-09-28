@@ -9,6 +9,7 @@ import ru.hogwarts.school.service.StudentService;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/student")
@@ -20,56 +21,77 @@ public class StudentController {
         this.studentService = studentService;
     }
 
+    private Map<String, String> message(String msg) {
+        return Map.of("сообщение", msg);
+    }
+
     @GetMapping("{id}")
-    public ResponseEntity<Student> getStudentInfo(@PathVariable Long id) {
+    public Object getStudentInfo(@PathVariable Long id) {
         Student student = studentService.findStudent(id);
         if (student == null) {
-            return ResponseEntity.notFound().build();
+            return message("Студент с id=" + id + " не найден");
         }
-        return ResponseEntity.ok(student);
+        if (student.getFaculty() != null) {
+            return student;
+        }
+        return student;
     }
 
     @PostMapping
-    public Student createStudent(@RequestBody Student student) {
-        return studentService.addStudent(student);
+    public Object createStudent(@RequestBody Student student) {
+        Student created = studentService.addStudent(student);
+        if (created == null) {
+            return message("Ошибка при создании студента");
+        }
+        return created;
     }
 
     @PutMapping
-    public ResponseEntity<Student> editStudent(@RequestBody Student student) {
-        Student foundStudent = studentService.editStudent(student);
-        if (foundStudent == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public Object editStudent(@RequestBody Student student) {
+        Student edited = studentService.editStudent(student);
+        if (edited == null) {
+            return message("Студент с id=" + student.getId() + " не найден для обновления");
         }
-        return ResponseEntity.ok(foundStudent);
+        return edited;
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
+    public Object deleteStudent(@PathVariable Long id) {
+        Student student = studentService.findStudent(id);
+        if (student == null) {
+            return message("Студент с id=" + id + " не найден для удаления");
+        }
         studentService.deleteStudent(id);
-        return ResponseEntity.ok().build();
+        return message("Студент с id=" + id + " успешно удален");
     }
 
     @GetMapping
-    public ResponseEntity<Collection<Student>> findStudents(@RequestParam(required = false) Integer age) {
+    public Object findStudents(@RequestParam(required = false) Integer age) {
         if (age != null && age > 0) {
-            return ResponseEntity.ok(studentService.findByAge(age));
+            var students = studentService.findByAge(age);
+            if (students.isEmpty()) {
+                return Map.of("сообщение", "Студенты с возрастом " + age + " не найдены");
+            }
+            return students;
         }
-        return ResponseEntity.ok(Collections.emptyList());
+        return Collections.emptyList();
     }
 
     @GetMapping("/ageBetween")
-    public Collection<Student> findStudentsByAgeBetween(@RequestParam int min, @RequestParam int max) {
-        return studentService.findByAgeBetween(min, max);
+    public Object findStudentsByAgeBetween(@RequestParam int min, @RequestParam int max) {
+        Collection<Student> students = studentService.findByAgeBetween(min, max);
+        if (students.isEmpty()) {
+            return message("Студенты в возрасте от " + min + " до " + max + " не найдены");
+        }
+        return students;
     }
 
     @GetMapping("{id}/faculty")
-    public String getFacultyOfStudent(@PathVariable Long id) {
+    public Object getFacultyByStudentId(@PathVariable Long id) {
         Faculty faculty = studentService.getFacultyByStudentId(id);
         if (faculty == null) {
-            return "На факультете нет студента с id=" + id;
+            return message("На факультете нет студента с id=" + id);
         }
-        return "Faculty{id=" + faculty.getId() +
-                ", name='" + faculty.getName() + '\'' +
-                ", color='" + faculty.getColor() + "'}";
+        return faculty;
     }
 }

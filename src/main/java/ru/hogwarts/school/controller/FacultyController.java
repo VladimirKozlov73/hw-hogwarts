@@ -9,6 +9,7 @@ import ru.hogwarts.school.service.FacultyService;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/faculty")
@@ -20,62 +21,74 @@ public class FacultyController {
         this.facultyService = facultyService;
     }
 
+    private Map<String, String> message(String msg) {
+        return Map.of("сообщение", msg);
+    }
+
     @GetMapping("{id}")
-    public ResponseEntity<Faculty> getFacultyInfo(@PathVariable Long id) {
+    public Object getFacultyInfo(@PathVariable Long id) {
         Faculty faculty = facultyService.findFaculty(id);
         if (faculty == null) {
-            return ResponseEntity.notFound().build();
+            return message("Факультет с id=" + id + " не найден");
         }
-        return ResponseEntity.ok(faculty);
+        return faculty;
     }
 
     @PostMapping
-    public Faculty createFaculty(@RequestBody Faculty faculty) {
-        return facultyService.addFaculty(faculty);
+    public Object createFaculty(@RequestBody Faculty faculty) {
+        Faculty created = facultyService.addFaculty(faculty);
+        if (created == null) {
+            return message("Ошибка при создании факультета");
+        }
+        return created;
     }
 
     @PutMapping
-    public ResponseEntity<Faculty> editFaculty(@RequestBody Faculty faculty) {
-        Faculty foundFaculty = facultyService.editFaculty(faculty);
-        if (foundFaculty == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public Object editFaculty(@RequestBody Faculty faculty) {
+        Faculty edited = facultyService.editFaculty(faculty);
+        if (edited == null) {
+            return message("Факультет с id=" + faculty.getId() + " не найден для обновления");
         }
-        return ResponseEntity.ok(foundFaculty);
+        return edited;
     }
 
     @DeleteMapping("{id}")
-    public ResponseEntity<Void> deleteFaculty(@PathVariable Long id) {
+    public Object deleteFaculty(@PathVariable Long id) {
+        Faculty faculty = facultyService.findFaculty(id);
+        if (faculty == null) {
+            return message("Факультет с id=" + id + " не найден для удаления");
+        }
         facultyService.deleteFaculty(id);
-        return ResponseEntity.ok().build();
+        return message("Факультет с id=" + id + " успешно удален");
     }
 
     @GetMapping
-    public ResponseEntity<Collection<Faculty>> findFaculties(@RequestParam(required = false) String color) {
+    public Object findFaculties(@RequestParam(required = false) String color) {
         if (color != null && !color.isBlank()) {
-            return ResponseEntity.ok(facultyService.findByColor(color));
+            Collection<Faculty> faculties = facultyService.findByColor(color);
+            if (faculties.isEmpty()) {
+                return message("Факультеты с цветом '" + color + "' не найдены");
+            }
+            return faculties;
         }
-        return ResponseEntity.ok(Collections.emptyList());
+        return Collections.emptyList();
     }
 
     @GetMapping("/search")
-    public Collection<Faculty> findFacultiesByNameOrColorIgnoreCase(@RequestParam String param) {
-        return facultyService.findByNameOrColorIgnoreCase(param);
+    public Object findFacultiesByNameOrColor(@RequestParam String param) {
+        Collection<Faculty> faculties = facultyService.findByNameOrColorIgnoreCase(param);
+        if (faculties.isEmpty()) {
+            return message("Факультеты с именем или цветом '" + param + "' не найдены");
+        }
+        return faculties;
     }
 
     @GetMapping("{id}/students")
-    public String getStudentsOfFaculty(@PathVariable Long id) {
+    public Object getStudentsByFacultyId(@PathVariable Long id) {
         Collection<Student> students = facultyService.getStudentsByFacultyId(id);
         if (students == null || students.isEmpty()) {
-            return "На факультете с id=" + id + " студентов нет.";
+            return message("Студенты для факультета с id=" + id + " не найдены");
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("Students of faculty id=").append(id).append(":\n");
-        for (Student s : students) {
-            sb.append("Student{id=").append(s.getId())
-                    .append(", name='").append(s.getName())
-                    .append("', age=").append(s.getAge())
-                    .append("}\n");
-        }
-        return sb.toString();
+        return students;
     }
 }

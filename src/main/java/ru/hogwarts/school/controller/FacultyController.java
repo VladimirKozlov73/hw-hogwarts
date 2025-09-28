@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Faculty;
+import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.service.FacultyService;
 
 import java.util.Collection;
@@ -59,5 +60,22 @@ public class FacultyController {
     @GetMapping("/search")
     public Collection<Faculty> findFacultiesByNameOrColorIgnoreCase(@RequestParam String param) {
         return facultyService.findByNameOrColorIgnoreCase(param);
+    }
+
+    @GetMapping("{id}/students")
+    public String getStudentsOfFaculty(@PathVariable Long id) {
+        Collection<Student> students = facultyService.getStudentsByFacultyId(id);
+        if (students == null || students.isEmpty()) {
+            return "На факультете с id=" + id + " студентов нет.";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Students of faculty id=").append(id).append(":\n");
+        for (Student s : students) {
+            sb.append("Student{id=").append(s.getId())
+                    .append(", name='").append(s.getName())
+                    .append("', age=").append(s.getAge())
+                    .append("}\n");
+        }
+        return sb.toString();
     }
 }

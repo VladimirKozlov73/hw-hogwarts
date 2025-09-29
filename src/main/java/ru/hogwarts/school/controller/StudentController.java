@@ -1,6 +1,9 @@
 package ru.hogwarts.school.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import ru.hogwarts.school.dto.StudentCreateRequest;
+import ru.hogwarts.school.dto.StudentEditRequest;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.service.FacultyService;
@@ -22,6 +25,7 @@ public class StudentController {
         this.facultyService = facultyService;
     }
 
+    // Метод утилиты для сообщений на русском в JSON
     private Map<String, String> message(String msg) {
         return Map.of("сообщение", msg);
     }
@@ -35,58 +39,37 @@ public class StudentController {
         return student;
     }
 
+    // POST c DTO, принимаем JSON с полями name, age, faculty (имя или цвет)
     @PostMapping
-    public Object createStudent(@RequestBody Map<String, Object> request) {
-        try {
-            String name = (String) request.get("name");
-            Integer age = (Integer) request.get("age");
-            String facultyNameOrColor = (String) request.get("faculty");
-
-            if (name == null || age == null || facultyNameOrColor == null) {
-                return message("Поля name, age и faculty обязательны");
-            }
-            Faculty faculty = findFacultyByNameOrColorIgnoreCase(facultyNameOrColor);
-            if (faculty == null) {
-                return message("Факультет с именем или цветом '" + facultyNameOrColor + "' не найден");
-            }
-            Student student = new Student();
-            student.setName(name);
-            student.setAge(age);
-            student.setFaculty(faculty);
-            Student created = studentService.addStudent(student);
-            return created;
-        } catch (ClassCastException e) {
-            return message("Ошибка формата входных данных");
+    public Object createStudent(@Valid @RequestBody StudentCreateRequest request) {
+        Faculty faculty = findFacultyByNameOrColorIgnoreCase(request.getFaculty());
+        if (faculty == null) {
+            return message("Факультет с именем или цветом '" + request.getFaculty() + "' не найден");
         }
+        Student student = new Student();
+        student.setName(request.getName());
+        student.setAge(request.getAge());
+        student.setFaculty(faculty);
+        Student created = studentService.addStudent(student);
+        return created;
     }
 
+    // PUT c DTO, обновление по id, name, age, faculty (имя или цвет)
     @PutMapping
-    public Object editStudent(@RequestBody Map<String, Object> request) {
-        try {
-            Long id = ((Number) request.get("id")).longValue();
-            String name = (String) request.get("name");
-            Integer age = (Integer) request.get("age");
-            String facultyNameOrColor = (String) request.get("faculty");
-
-            if (id == null || name == null || age == null || facultyNameOrColor == null) {
-                return message("Поля id, name, age и faculty обязательны");
-            }
-            Faculty faculty = findFacultyByNameOrColorIgnoreCase(facultyNameOrColor);
-            if (faculty == null) {
-                return message("Факультет с именем или цветом '" + facultyNameOrColor + "' не найден");
-            }
-            Student existing = studentService.findStudent(id);
-            if (existing == null) {
-                return message("Студент с id=" + id + " не найден для обновления");
-            }
-            existing.setName(name);
-            existing.setAge(age);
-            existing.setFaculty(faculty);
-            Student edited = studentService.editStudent(existing);
-            return edited;
-        } catch (ClassCastException | NullPointerException e) {
-            return message("Ошибка формата входных данных");
+    public Object editStudent(@Valid @RequestBody StudentEditRequest request) {
+        Faculty faculty = findFacultyByNameOrColorIgnoreCase(request.getFaculty());
+        if (faculty == null) {
+            return message("Факультет с именем или цветом '" + request.getFaculty() + "' не найден");
         }
+        Student existing = studentService.findStudent(request.getId());
+        if (existing == null) {
+            return message("Студент с id=" + request.getId() + " не найден для обновления");
+        }
+        existing.setName(request.getName());
+        existing.setAge(request.getAge());
+        existing.setFaculty(faculty);
+        Student edited = studentService.editStudent(existing);
+        return edited;
     }
 
     @DeleteMapping("{id}")

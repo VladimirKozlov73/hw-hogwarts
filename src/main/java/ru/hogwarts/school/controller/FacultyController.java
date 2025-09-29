@@ -1,6 +1,9 @@
 package ru.hogwarts.school.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import ru.hogwarts.school.dto.FacultyCreateRequest;
+import ru.hogwarts.school.dto.FacultyEditRequest;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.service.FacultyService;
@@ -33,45 +36,24 @@ public class FacultyController {
     }
 
     @PostMapping
-    public Object createFaculty(@RequestBody Map<String, Object> request) {
-        try {
-            String name = (String) request.get("name");
-            String color = (String) request.get("color");
-
-            if (name == null || color == null) {
-                return message("Поля name и color обязательны");
-            }
-            Faculty faculty = new Faculty();
-            faculty.setName(name);
-            faculty.setColor(color);
-            Faculty created = facultyService.addFaculty(faculty);
-            return created;
-        } catch (ClassCastException e) {
-            return message("Ошибка формата входных данных");
-        }
+    public Object createFaculty(@Valid @RequestBody FacultyCreateRequest request) {
+        Faculty faculty = new Faculty();
+        faculty.setName(request.getName());
+        faculty.setColor(request.getColor());
+        Faculty created = facultyService.addFaculty(faculty);
+        return created;
     }
 
     @PutMapping
-    public Object editFaculty(@RequestBody Map<String, Object> request) {
-        try {
-            Long id = ((Number) request.get("id")).longValue();
-            String name = (String) request.get("name");
-            String color = (String) request.get("color");
-
-            if (id == null || name == null || color == null) {
-                return message("Поля id, name и color обязательны");
-            }
-            Faculty faculty = facultyService.findFaculty(id);
-            if (faculty == null) {
-                return message("Факультет с id=" + id + " не найден для обновления");
-            }
-            faculty.setName(name);
-            faculty.setColor(color);
-            Faculty edited = facultyService.editFaculty(faculty);
-            return edited;
-        } catch (ClassCastException | NullPointerException e) {
-            return message("Ошибка формата входных данных");
+    public Object editFaculty(@Valid @RequestBody FacultyEditRequest request) {
+        Faculty faculty = facultyService.findFaculty(request.getId());
+        if (faculty == null) {
+            return message("Факультет с id=" + request.getId() + " не найден для обновления");
         }
+        faculty.setName(request.getName());
+        faculty.setColor(request.getColor());
+        Faculty edited = facultyService.editFaculty(faculty);
+        return edited;
     }
 
     @DeleteMapping("{id}")

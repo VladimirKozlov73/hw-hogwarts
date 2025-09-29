@@ -1,10 +1,9 @@
 package ru.hogwarts.school.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
+import ru.hogwarts.school.service.FacultyService;
 import ru.hogwarts.school.service.StudentService;
 
 import java.util.Collection;
@@ -16,9 +15,11 @@ import java.util.Map;
 public class StudentController {
 
     private final StudentService studentService;
+    private final FacultyService facultyService;
 
-    public StudentController(StudentService studentService) {
+    public StudentController(StudentService studentService, FacultyService facultyService) {
         this.studentService = studentService;
+        this.facultyService = facultyService;
     }
 
     private Map<String, String> message(String msg) {
@@ -31,28 +32,61 @@ public class StudentController {
         if (student == null) {
             return message("Студент с id=" + id + " не найден");
         }
-        if (student.getFaculty() != null) {
-            return student;
-        }
         return student;
     }
 
     @PostMapping
-    public Object createStudent(@RequestBody Student student) {
-        Student created = studentService.addStudent(student);
-        if (created == null) {
-            return message("Ошибка при создании студента");
+    public Object createStudent(@RequestBody Map<String, Object> request) {
+        try {
+            String name = (String) request.get("name");
+            Integer age = (Integer) request.get("age");
+            String facultyNameOrColor = (String) request.get("faculty");
+
+            if (name == null || age == null || facultyNameOrColor == null) {
+                return message("Поля name, age и faculty обязательны");
+            }
+            Faculty faculty = findFacultyByNameOrColorIgnoreCase(facultyNameOrColor);
+            if (faculty == null) {
+                return message("Факультет с именем или цветом '" + facultyNameOrColor + "' не найден");
+            }
+            Student student = new Student();
+            student.setName(name);
+            student.setAge(age);
+            student.setFaculty(faculty);
+            Student created = studentService.addStudent(student);
+            return created;
+        } catch (ClassCastException e) {
+            return message("Ошибка формата входных данных");
         }
-        return created;
     }
 
     @PutMapping
-    public Object editStudent(@RequestBody Student student) {
-        Student edited = studentService.editStudent(student);
-        if (edited == null) {
-            return message("Студент с id=" + student.getId() + " не найден для обновления");
+    public Object editStudent(@RequestBody Map<String, Object> request) {
+        try {
+            Long id = ((Number) request.get("id")).longValue();
+            String name = (String) request.get("name");
+            Integer age = (Integer) request.get("age");
+            String facultyNameOrColor = (String) request.get("faculty");
+
+            if (id == null || name == null || age == null || facultyNameOrColor == null) {
+                return message("Поля id, name, age и faculty обязательны");
+            }
+            Faculty faculty = findFacultyByNameOrColorIgnoreCase(facultyNameOrColor);
+            if (faculty == null) {
+                return message("Факультет с именем или цветом '" + facultyNameOrColor + "' не найден");
+            }
+            Student existing = studentService.findStudent(id);
+            if (existing == null) {
+                return message("Студент с id=" + id + " не найден для обновления");
+            }
+            existing.setName(name);
+            existing.setAge(age);
+            existing.setFaculty(faculty);
+            Student edited = studentService.editStudent(existing);
+            return edited;
+        } catch (ClassCastException | NullPointerException e) {
+            return message("Ошибка формата входных данных");
         }
-        return edited;
     }
 
     @DeleteMapping("{id}")
@@ -93,5 +127,13 @@ public class StudentController {
             return message("На факультете нет студента с id=" + id);
         }
         return faculty;
+    }
+
+    private Faculty findFacultyByNameOrColorIgnoreCase(String param) {
+        var faculties = facultyService.findByNameOrColorIgnoreCase(param.toLowerCase());
+        return faculties.stream()
+                .filter(f -> f.getName().equalsIgnoreCase(param) || f.getColor().equalsIgnoreCase(param))
+                .findFirst()
+                .orElse(null);
     }
 }

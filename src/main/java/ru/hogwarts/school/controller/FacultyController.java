@@ -1,7 +1,5 @@
 package ru.hogwarts.school.controller;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.model.Faculty;
 import ru.hogwarts.school.model.Student;
@@ -35,21 +33,45 @@ public class FacultyController {
     }
 
     @PostMapping
-    public Object createFaculty(@RequestBody Faculty faculty) {
-        Faculty created = facultyService.addFaculty(faculty);
-        if (created == null) {
-            return message("Ошибка при создании факультета");
+    public Object createFaculty(@RequestBody Map<String, Object> request) {
+        try {
+            String name = (String) request.get("name");
+            String color = (String) request.get("color");
+
+            if (name == null || color == null) {
+                return message("Поля name и color обязательны");
+            }
+            Faculty faculty = new Faculty();
+            faculty.setName(name);
+            faculty.setColor(color);
+            Faculty created = facultyService.addFaculty(faculty);
+            return created;
+        } catch (ClassCastException e) {
+            return message("Ошибка формата входных данных");
         }
-        return created;
     }
 
     @PutMapping
-    public Object editFaculty(@RequestBody Faculty faculty) {
-        Faculty edited = facultyService.editFaculty(faculty);
-        if (edited == null) {
-            return message("Факультет с id=" + faculty.getId() + " не найден для обновления");
+    public Object editFaculty(@RequestBody Map<String, Object> request) {
+        try {
+            Long id = ((Number) request.get("id")).longValue();
+            String name = (String) request.get("name");
+            String color = (String) request.get("color");
+
+            if (id == null || name == null || color == null) {
+                return message("Поля id, name и color обязательны");
+            }
+            Faculty faculty = facultyService.findFaculty(id);
+            if (faculty == null) {
+                return message("Факультет с id=" + id + " не найден для обновления");
+            }
+            faculty.setName(name);
+            faculty.setColor(color);
+            Faculty edited = facultyService.editFaculty(faculty);
+            return edited;
+        } catch (ClassCastException | NullPointerException e) {
+            return message("Ошибка формата входных данных");
         }
-        return edited;
     }
 
     @DeleteMapping("{id}")
@@ -75,19 +97,23 @@ public class FacultyController {
     }
 
     @GetMapping("/search")
-    public Object findFacultiesByNameOrColor(@RequestParam String param) {
-        Collection<Faculty> faculties = facultyService.findByNameOrColorIgnoreCase(param);
-        if (faculties.isEmpty()) {
-            return message("Факультеты с именем или цветом '" + param + "' не найдены");
+    public Object findFacultiesByNameOrColorPartial(@RequestParam String param) {
+        Collection<Faculty> faculties = facultyService.findByNameOrColorIgnoreCase(param.toLowerCase());
+        var result = faculties.stream()
+                .filter(f -> f.getName().toLowerCase().contains(param.toLowerCase())
+                        || f.getColor().toLowerCase().contains(param.toLowerCase()))
+                .toList();
+        if (result.isEmpty()) {
+            return message("Факультеты с именем или цветом содержащим '" + param + "' не найдены");
         }
-        return faculties;
+        return result;
     }
 
     @GetMapping("{id}/students")
     public Object getStudentsByFacultyId(@PathVariable Long id) {
         Collection<Student> students = facultyService.getStudentsByFacultyId(id);
         if (students == null || students.isEmpty()) {
-            return message("Студенты для факультета с id=" + id + " не найдены");
+            return message("На факультете с id=" + id + " нет студентов");
         }
         return students;
     }

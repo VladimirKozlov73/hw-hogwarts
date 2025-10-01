@@ -1,6 +1,7 @@
 package ru.hogwarts.school.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.hogwarts.school.dto.FacultyCreateRequest;
 import ru.hogwarts.school.dto.FacultyEditRequest;
@@ -27,43 +28,32 @@ public class FacultyController {
     }
 
     @GetMapping("{id}")
-    public Object getFacultyInfo(@PathVariable Long id) {
-        Faculty faculty = facultyService.findFaculty(id);
-        if (faculty == null) {
-            return message("Факультет с id=" + id + " не найден");
-        }
-        return faculty;
+    public Faculty getFacultyInfo(@PathVariable Long id) {
+        return facultyService.findFaculty(id);
     }
 
     @PostMapping
-    public Object createFaculty(@Valid @RequestBody FacultyCreateRequest request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public Faculty createFaculty(@Valid @RequestBody FacultyCreateRequest request) {
         Faculty faculty = new Faculty();
         faculty.setName(request.getName());
         faculty.setColor(request.getColor());
-        Faculty created = facultyService.addFaculty(faculty);
-        return created;
+        return facultyService.addFaculty(faculty);
     }
 
     @PutMapping
-    public Object editFaculty(@Valid @RequestBody FacultyEditRequest request) {
-        Faculty faculty = facultyService.findFaculty(request.getId());
-        if (faculty == null) {
-            return message("Факультет с id=" + request.getId() + " не найден для обновления");
-        }
+    public Faculty editFaculty(@Valid @RequestBody FacultyEditRequest request) {
+        Faculty faculty = new Faculty();
+        faculty.setId(request.getId());
         faculty.setName(request.getName());
         faculty.setColor(request.getColor());
-        Faculty edited = facultyService.editFaculty(faculty);
-        return edited;
+        return facultyService.editFaculty(faculty);
     }
 
     @DeleteMapping("{id}")
-    public Object deleteFaculty(@PathVariable Long id) {
-        Faculty faculty = facultyService.findFaculty(id);
-        if (faculty == null) {
-            return message("Факультет с id=" + id + " не найден для удаления");
-        }
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFaculty(@PathVariable Long id) {
         facultyService.deleteFaculty(id);
-        return message("Факультет с id=" + id + " успешно удален");
     }
 
     @GetMapping

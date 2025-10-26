@@ -58,7 +58,7 @@ public class FacultyService {
     }
 
     public Collection<Faculty> findByNameOrColorIgnoreCase(String param) {
-        return facultyRepository.findByNameIgnoreCaseOrColorIgnoreCase(param, param);
+        return facultyRepository.findByNameContainingIgnoreCaseOrColorContainingIgnoreCase(param, param);
     }
 
     public Collection<Student> getStudentsByFacultyId(long facultyId) {
@@ -93,9 +93,6 @@ public class FacultyService {
 
     public Collection<Faculty> findFacultiesByNameOrColorPartial(String param) {
         String lowerParam = param.toLowerCase();
-        return facultyRepository.findByNameIgnoreCaseOrColorIgnoreCase(lowerParam, lowerParam).stream()
-                .filter(f -> f.getName().toLowerCase().contains(lowerParam)
-                        || f.getColor().toLowerCase().contains(lowerParam))
-                .collect(Collectors.toList());
+        return facultyRepository.findByNameContainingIgnoreCaseOrColorContainingIgnoreCase(param, param);
     }
 }

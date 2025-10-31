@@ -10,6 +10,8 @@ import ru.hogwarts.school.repository.StudentRepository;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Pageable;
+
 
 @Service
 public class StudentService {
@@ -89,5 +91,17 @@ public class StudentService {
 
     public Collection<Student> findStudentsByAgeBetween(int min, int max) {
         return studentRepository.findByAgeBetween(min, max);
+    }
+
+    public Long countAllStudents() {
+        return studentRepository.countAllStudents();
+    }
+
+    public Double findAverageAge() {
+        return studentRepository.findAverageAge();
+    }
+
+    public List<Student> findLastFiveStudents(Pageable pageable) {
+        return studentRepository.findLastFiveStudents(pageable);
     }
 }

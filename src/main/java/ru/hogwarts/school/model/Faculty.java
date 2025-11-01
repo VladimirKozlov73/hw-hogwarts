@@ -7,12 +7,19 @@ import java.util.Collection;
 import java.util.Objects;
 
 @Entity
+@Table(
+        uniqueConstraints = @UniqueConstraint(columnNames = {"name", "color"})
+)
 public class Faculty {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
+
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private String color;
 
     @OneToMany(mappedBy = "faculty", fetch = FetchType.LAZY)

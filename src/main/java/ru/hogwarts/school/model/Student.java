@@ -3,6 +3,7 @@ package ru.hogwarts.school.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 
 import java.util.Objects;
 
@@ -12,8 +13,13 @@ public class Student {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
+
+    @Column(nullable = false, unique = true)
     private String name;
-    private int age;
+
+    @Column(nullable = false)
+    @Min(16)
+    private int age = 20;
 
     @ManyToOne
     @JoinColumn(name = "faculty_id")

@@ -11,7 +11,9 @@ import ru.hogwarts.school.model.Student;
 import ru.hogwarts.school.repository.FacultyRepository;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -136,5 +138,17 @@ public class FacultyService {
 
         String lowerParam = param.toLowerCase();
         return facultyRepository.findByNameContainingIgnoreCaseOrColorContainingIgnoreCase(param, param);
+    }
+
+    public String findLongestFacultyName() {
+        logger.info("Was invoked method to find longest faculty name");
+        String longest = facultyRepository.findAll().stream()
+                .map(Faculty::getName)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .max(Comparator.comparingInt(String::length))
+                .orElse("");
+        logger.debug("Longest faculty name found: {}", longest);
+        return longest;
     }
 }

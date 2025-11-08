@@ -153,7 +153,7 @@ public class StudentService {
                 .collect(Collectors.toList());
     }
 
-    public Double findAverageAgeByCalculating() {
+    public double findAverageAgeByCalculating() {
         List<Student> students = studentRepository.findAll();
         return students.stream()
                 .mapToInt(Student::getAge)

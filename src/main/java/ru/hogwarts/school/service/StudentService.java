@@ -11,6 +11,7 @@ import ru.hogwarts.school.repository.StudentRepository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Pageable;
 
@@ -21,6 +22,8 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final FacultyService facultyService;
+
+    private final Object lock = new Object();
 
     @Autowired
     public StudentService(StudentRepository studentRepository, FacultyService facultyService) {
@@ -159,5 +162,71 @@ public class StudentService {
                 .mapToInt(Student::getAge)
                 .average()
                 .orElse(0.0);
+    }
+
+    public void printStudentNamesInParallel() {
+        List<String> names = getStudentNames().stream()
+                .limit(6)
+                .toList();
+
+        names.stream().limit(2).forEach(System.out::println);
+
+        Thread thread1 = new Thread(() -> {
+            names.stream().skip(2).limit(2).forEach(System.out::println);
+        });
+
+        Thread thread2 = new Thread(() -> {
+            names.stream().skip(4).limit(2).forEach(System.out::println);
+        });
+
+        thread1.start();
+        thread2.start();
+
+        try {
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException e) {
+            System.out.println("Thread has been interrupted");
+        }
+    }
+
+    public void printNamesSynchronized(List<String> names) {
+        synchronized (lock) {
+            for (String name : names) {
+                System.out.println(name);
+            }
+        }
+    }
+
+    public void printStudentNamesSynchronized() {
+        List<String> names = getStudentNames().stream()
+                .limit(6)
+                .toList();
+
+        printNamesSynchronized(names.subList(0, 2));
+
+        Thread thread1 = new Thread(() -> {
+            printNamesSynchronized(names.subList(2, 4));
+        });
+
+        Thread thread2 = new Thread(() -> {
+            printNamesSynchronized(names.subList(4, 6));
+        });
+
+        thread1.start();
+        thread2.start();
+
+        try {
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException e) {
+            System.out.println("Thread has been interrupted");
+        }
+    }
+
+    private  List<String> getStudentNames() {
+        return studentRepository.findAll().stream()
+                .map(Student::getName)
+                .toList();
     }
 }

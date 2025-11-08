@@ -143,4 +143,21 @@ public class StudentService {
         logger.info("Was invoked method for find last five students");
         return studentRepository.findLastFiveStudents(pageable);
     }
+
+    public List<String> getStudentNamesStartingWith(String letter) {
+        return studentRepository.findAll().stream()
+                .map(Student::getName)
+                .filter(name -> name != null && name.toUpperCase().startsWith(letter.toUpperCase()))
+                .map(String::toUpperCase)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public double findAverageAgeByCalculating() {
+        List<Student> students = studentRepository.findAll();
+        return students.stream()
+                .mapToInt(Student::getAge)
+                .average()
+                .orElse(0.0);
+    }
 }

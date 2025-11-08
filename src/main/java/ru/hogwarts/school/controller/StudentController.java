@@ -13,6 +13,7 @@ import ru.hogwarts.school.service.StudentService;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -83,5 +84,15 @@ public class StudentController {
     @GetMapping("/lastFive")
     public List<Student> getLastFiveStudents() {
         return studentService.findLastFiveStudents(PageRequest.of(0, 5));
+    }
+
+    @GetMapping("/names/startWith")
+    public List<String> getStudentNamesStartWith(@RequestParam String letter) {
+        return studentService.getStudentNamesStartingWith(letter);
+    }
+
+    @GetMapping("/averageAgeCalculated")
+    public Double getAverageAgeCalculated() {
+        return studentService.findAverageAgeByCalculating();
     }
 }
